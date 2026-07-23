@@ -138,11 +138,12 @@ export function calcMostFrequent(year, month, day) {
   for (const d of digits) {
     freq[d] = (freq[d] || 0) + 1;
   }
-  // 找出出现频率 > 2 的数字
+  // 找出出现频率 > 2 的数字（仅1-9，0不属于性格数字体系）
   const result = [];
   for (const [num, count] of Object.entries(freq)) {
-    if (count >= 3) {
-      result.push({ digit: parseInt(num), count });
+    const n = parseInt(num);
+    if (n >= 1 && n <= 9 && count >= 3) {
+      result.push({ digit: n, count });
     }
   }
   // 按频率降序排列

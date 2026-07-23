@@ -432,10 +432,26 @@
             min-width: 72px;
             transition: all 0.3s;
         }
+        .year-item {
+            cursor: pointer;
+        }
         .year-item.current {
             border-color: var(--gold);
             background: rgba(201, 169, 110, 0.1);
         }
+        .year-item:hover {
+            border-color: var(--gold-dark);
+            background: rgba(201, 169, 110, 0.06);
+        }
+        .year-detail {
+            margin-top: 12px;
+            padding: 16px;
+            background: rgba(201, 169, 110, 0.05);
+            border-radius: 8px;
+            border-left: 3px solid var(--gold-dark);
+            display: none;
+        }
+        .year-detail.show { display: block; }
         .year-item .yr-num {
             font-size: 1.3rem;
             color: var(--gold);
@@ -515,6 +531,24 @@
         }
         .collapsible-content.open { max-height: 5000px; }
 
+        .more-btn {
+            display: inline-block;
+            margin-top: 12px;
+            padding: 6px 18px;
+            border: 1px solid var(--border-gold);
+            border-radius: 20px;
+            color: var(--gold);
+            background: transparent;
+            font-size: 0.8rem;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.3s;
+            letter-spacing: 0.1em;
+        }
+        .more-btn:hover { background: rgba(201,169,110,0.1); }
+        .more-content { display: none; margin-top: 12px; }
+        .more-content.show { display: block; }
+
         /* Footer */
         .footer {
             text-align: center;
@@ -576,6 +610,10 @@
         import { restrictionDescriptions } from './data-restriction.js';
         import { personalYearDescriptions } from './data-personalyear.js';
         import { lineDescriptions, missingDescriptions } from './data-grid.js';
+        let birthdayDescriptions = null;
+        let talentDescriptions = null;
+        try { const m = await import('./data-birthday.js'); birthdayDescriptions = m.birthdayDescriptions; } catch(e) {}
+        try { const m = await import('./data-talent.js'); talentDescriptions = m.talentDescriptions; } catch(e) {}
 
         window.calculate = function() {
             const year = parseInt(document.getElementById('year').value);
@@ -623,6 +661,29 @@
                 html += '</div>';
             });
             html += '</div></div>';
+
+            // Birthday number detail
+            const bdDesc = birthdayDescriptions ? (birthdayDescriptions[r.birthDay] || '') : '';
+            if (bdDesc) {
+                html += '<div class="section-card fade-in">';
+                html += '<div class="section-title"><span class="num-badge">' + r.birthDay + '</span>生日数 ' + r.birthDay + ' — ' + (numberInfo[r.birthDay]?.name || '') + '</div>';
+                html += '<div class="section-subtitle">出生日代表天性人格特质与行为表现，是成年阶段最突出的个人标签</div>';
+                html += '<div class="lp-overview">' + bdDesc + '</div>';
+                html += '</div>';
+            }
+
+            // Talent number combinations
+            const talentKey = String(r.talent);
+            const talentCombo = talentDescriptions ? (talentDescriptions[talentKey] || []) : null;
+            if (talentCombo && talentCombo.length > 0) {
+                html += '<div class="section-card fade-in">';
+                html += '<div class="section-title"><span class="num-badge">' + r.talentDisplay + '</span>天赋数 ' + r.talentDisplay + ' — 潜能开发</div>';
+                html += '<div class="section-subtitle">出生年月日所有数字相加的中间数，代表你的天赋潜能方向</div>';
+                talentCombo.forEach(tc => {
+                    html += '<div class="success-item"><div class="kw">' + tc.combo + '</div><div class="desc">' + tc.desc + '</div></div>';
+                });
+                html += '</div>';
+            }
 
             // Dominant frequency
             if (r.dominant.length > 0) {
@@ -677,7 +738,7 @@
             details.forEach((d, idx) => {
                 if (lp[d.key]) {
                     const id = 'lp-' + d.key;
-                    html += `<div class="detail-block collapsible-header" onclick="toggleCollapsible('${id}')">`;
+                    html += `<div class="detail-block collapsible-header">`;
                     html += `<h4>${d.title}</h4><span class="arrow">▼</span></div>`;
                     html += `<div id="${id}" class="collapsible-content"><p style="padding:12px 0;font-size:0.88rem;color:var(--text-secondary);line-height:1.9;">${lp[d.key]}</p></div>`;
                 }
@@ -769,31 +830,52 @@
             r.personalYears.forEach(pyItem => {
                 const isCurrent = pyItem.year === new Date().getFullYear();
                 const pyDesc = personalYearDescriptions[pyItem.number];
-                html += `<div class="year-item ${isCurrent ? 'current' : ''}">`;
+                html += `<div class="year-item ${isCurrent ? 'current' : ''}" data-py-num="${pyItem.number}">`;
                 html += `<div class="yr-num">${pyItem.number}</div>`;
                 html += `<div class="yr-name">${pyDesc?.name || ''}</div>`;
                 html += `<div class="yr-cal">${pyItem.year}</div>`;
                 html += '</div>';
             });
             html += '</div>';
-            html += '<div class="personal-year-card" style="margin-top:16px;">';
-            html += `<h4>${py.icon} ${new Date().getFullYear()}年 · ${py.name}</h4>`;
-            html += `<p><strong>正面：</strong>${py.positive}</p>`;
-            html += `<p><strong>注意：</strong>${py.negative}</p>`;
-            html += `<p><strong>健康：</strong>${py.health}</p>`;
-            html += '</div></div>';
+            html += '<div class="year-detail" id="py-detail"></div>';
+            html += '</div>';
 
             el.innerHTML = html;
             el.classList.add('show');
             el.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
 
-        window.toggleCollapsible = function(id) {
-            const content = document.getElementById(id);
-            const header = content.previousElementSibling;
-            content.classList.toggle('open');
-            header.classList.toggle('open');
-        };
+        // Store personal year descriptions globally for click handler
+        window._pyDescs = personalYearDescriptions;
+        document.addEventListener('click', e => {
+            // Collapsible toggle
+            const header = e.target.closest('.collapsible-header');
+            if (header) {
+                const content = header.nextElementSibling;
+                if (content && content.classList.contains('collapsible-content')) {
+                    content.classList.toggle('open');
+                    header.classList.toggle('open');
+                }
+                return;
+            }
+            // Year timeline click
+            const yearItem = e.target.closest('.year-item');
+            if (yearItem) {
+                const num = parseInt(yearItem.dataset.pyNum);
+                const desc = window._pyDescs[num];
+                const detail = document.getElementById('py-detail');
+                if (desc && detail) {
+                    // Remove current highlight, add to clicked
+                    document.querySelectorAll('.year-item.current').forEach(el => el.classList.remove('current'));
+                    yearItem.classList.add('current');
+                    detail.innerHTML = `<h4>${desc.icon} 流年 ${num} — ${desc.name}</h4>` +
+                        `<p><strong>正面：</strong>${desc.positive}</p>` +
+                        `<p><strong>注意：</strong>${desc.negative}</p>` +
+                        `<p><strong>健康：</strong>${desc.health}</p>`;
+                    detail.classList.add('show');
+                }
+            }
+        });
 
         // Enter key support
         document.addEventListener('keydown', e => {
