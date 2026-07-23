@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>生命数字密码 — 生命蓝图解析</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-card: #1a1a2e;
+            --bg-card-hover: #1f1f35;
+            --gold: #c9a96e;
+            --gold-light: #e8d5a3;
+            --gold-dark: #8b7340;
+            --text-primary: #e8e0d0;
+            --text-secondary: #a09882;
+            --text-muted: #6b6355;
+            --accent-red: #c75b5b;
+            --accent-blue: #5b8ec7;
+            --accent-green: #5bc78e;
+            --accent-purple: #9b6ec7;
+            --border: #2a2a3e;
+            --border-gold: rgba(201, 169, 110, 0.3);
+        }
+
+        body {
+            font-family: 'Noto Serif SC', 'Songti SC', 'SimSun', serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.8;
+        }
+
+        /* Background gradient */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(ellipse at 20% 50%, rgba(201, 169, 110, 0.03) 0%, transparent 50%),
+                        radial-gradient(ellipse at 80% 20%, rgba(155, 110, 199, 0.03) 0%, transparent 50%),
+                        radial-gradient(ellipse at 50% 80%, rgba(91, 142, 199, 0.03) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            padding: 40px 0 30px;
+        }
+        .header h1 {
+            font-size: 2rem;
+            color: var(--gold);
+            font-weight: 400;
+            letter-spacing: 0.3em;
+            margin-bottom: 8px;
+        }
+        .header .subtitle {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            letter-spacing: 0.15em;
+        }
+        .header .divider {
+            width: 60px;
+            height: 1px;
+            background: var(--gold-dark);
+            margin: 16px auto 0;
+        }
+
+        /* Input Section */
+        .input-section {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 32px;
+            margin: 20px 0;
+        }
+        .input-section label {
+            display: block;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+            letter-spacing: 0.1em;
+        }
+        .date-inputs {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .date-inputs input {
+            flex: 1;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px 16px;
+            color: var(--text-primary);
+            font-size: 1.1rem;
+            font-family: inherit;
+            text-align: center;
+            transition: border-color 0.3s;
+        }
+        .date-inputs input:focus {
+            outline: none;
+            border-color: var(--gold);
+        }
+        .date-inputs input::placeholder {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+        .btn-calculate {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, var(--gold-dark), var(--gold));
+            color: var(--bg-primary);
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-family: inherit;
+            letter-spacing: 0.2em;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn-calculate:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 20px rgba(201, 169, 110, 0.3);
+        }
+
+        /* Results */
+        .results { display: none; }
+        .results.show { display: block; }
+
+        /* Summary Cards */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px;
+            margin: 20px 0;
+        }
+        .summary-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 16px;
+            text-align: center;
+            transition: all 0.3s;
+        }
+        .summary-card:hover {
+            border-color: var(--border-gold);
+            background: var(--bg-card-hover);
+        }
+        .summary-card .label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            letter-spacing: 0.1em;
+            margin-bottom: 8px;
+        }
+        .summary-card .value {
+            font-size: 1.8rem;
+            color: var(--gold);
+            font-weight: 300;
+        }
+        .summary-card .value.small { font-size: 1rem; }
+        .summary-card .sub {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        /* Section Card */
+        .section-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 28px;
+            margin: 16px 0;
+        }
+        .section-title {
+            font-size: 1.1rem;
+            color: var(--gold);
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .section-title .num-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: var(--gold-dark);
+            color: var(--bg-primary);
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        .section-subtitle {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 16px;
+        }
+
+        /* Life Path Detail */
+        .lp-overview {
+            font-size: 0.95rem;
+            color: var(--text-primary);
+            margin-bottom: 20px;
+            padding: 16px;
+            background: rgba(201, 169, 110, 0.05);
+            border-left: 3px solid var(--gold-dark);
+            border-radius: 0 8px 8px 0;
+            line-height: 1.9;
+        }
+        .trait-list {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin: 16px 0;
+        }
+        .trait-group h4 {
+            font-size: 0.85rem;
+            margin-bottom: 10px;
+            letter-spacing: 0.1em;
+        }
+        .trait-group.positive h4 { color: var(--accent-green); }
+        .trait-group.negative h4 { color: var(--accent-red); }
+        .trait-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        .trait-tag {
+            font-size: 0.78rem;
+            padding: 4px 10px;
+            border-radius: 20px;
+            letter-spacing: 0.05em;
+        }
+        .trait-tag.pos {
+            background: rgba(91, 199, 142, 0.1);
+            color: var(--accent-green);
+            border: 1px solid rgba(91, 199, 142, 0.2);
+        }
+        .trait-tag.neg {
+            background: rgba(199, 91, 91, 0.1);
+            color: var(--accent-red);
+            border: 1px solid rgba(199, 91, 91, 0.2);
+        }
+        .detail-block {
+            margin: 16px 0;
+        }
+        .detail-block h4 {
+            font-size: 0.9rem;
+            color: var(--gold-light);
+            margin-bottom: 8px;
+        }
+        .detail-block p, .detail-block li {
+            font-size: 0.88rem;
+            color: var(--text-secondary);
+            line-height: 1.9;
+        }
+        .detail-block ul {
+            padding-left: 20px;
+        }
+        .detail-block li {
+            margin-bottom: 6px;
+        }
+        .sin-item {
+            margin-bottom: 12px;
+            padding: 10px 14px;
+            background: rgba(199, 91, 91, 0.05);
+            border-radius: 8px;
+            border-left: 2px solid rgba(199, 91, 91, 0.3);
+        }
+        .sin-item .kw {
+            font-size: 0.85rem;
+            color: var(--accent-red);
+            margin-bottom: 4px;
+        }
+        .sin-item .desc {
+            font-size: 0.83rem;
+            color: var(--text-secondary);
+            line-height: 1.8;
+        }
+        .success-item {
+            margin-bottom: 12px;
+            padding: 10px 14px;
+            background: rgba(91, 199, 142, 0.05);
+            border-radius: 8px;
+            border-left: 2px solid rgba(91, 199, 142, 0.3);
+        }
+        .success-item .kw {
+            font-size: 0.85rem;
+            color: var(--accent-green);
+            margin-bottom: 4px;
+        }
+        .success-item .desc {
+            font-size: 0.83rem;
+            color: var(--text-secondary);
+            line-height: 1.8;
+        }
+
+        /* Nine Grid */
+        .grid-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 16px 0;
+        }
+        .nine-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 80px);
+            grid-template-rows: repeat(3, 80px);
+            gap: 6px;
+        }
+        .grid-cell {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            position: relative;
+            transition: all 0.3s;
+        }
+        .grid-cell.has-num {
+            border-color: var(--border-gold);
+            background: rgba(201, 169, 110, 0.08);
+        }
+        .grid-cell.missing {
+            opacity: 0.35;
+        }
+        .grid-cell .cell-num {
+            font-size: 1.6rem;
+            color: var(--gold);
+            font-weight: 300;
+        }
+        .grid-cell .cell-dots {
+            display: flex;
+            gap: 3px;
+            margin-top: 4px;
+        }
+        .grid-cell .dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--gold);
+        }
+        .grid-labels {
+            display: flex;
+            justify-content: space-between;
+            width: 252px;
+            margin-top: 8px;
+        }
+        .grid-label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            letter-spacing: 0.1em;
+        }
+        .grid-lines-section { margin-top: 16px; width: 100%; }
+        .line-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            font-size: 0.83rem;
+        }
+        .line-item:last-child { border-bottom: none; }
+        .line-name { color: var(--text-secondary); }
+        .line-status { font-size: 0.78rem; padding: 2px 10px; border-radius: 12px; }
+        .line-status.active { background: rgba(91,199,142,0.15); color: var(--accent-green); }
+        .line-status.inactive { background: rgba(199,91,91,0.1); color: rgba(199,91,91,0.7); }
+        .line-desc {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+            padding-left: 12px;
+            border-left: 2px solid var(--border);
+            margin-bottom: 8px;
+            line-height: 1.7;
+        }
+
+        /* Restriction / Personal Year */
+        .restriction-card, .personal-year-card {
+            padding: 16px;
+            background: rgba(201, 169, 110, 0.05);
+            border-radius: 8px;
+            border-left: 3px solid var(--gold-dark);
+            margin: 12px 0;
+        }
+        .restriction-card h4, .personal-year-card h4 {
+            font-size: 0.85rem;
+            color: var(--gold-light);
+            margin-bottom: 8px;
+        }
+        .restriction-card p, .personal-year-card p {
+            font-size: 0.83rem;
+            color: var(--text-secondary);
+            line-height: 1.8;
+            margin-bottom: 8px;
+        }
+        .restriction-card p:last-child, .personal-year-card p:last-child { margin-bottom: 0; }
+        .cure-text {
+            color: var(--accent-green);
+            font-style: italic;
+        }
+
+        /* Personal Year Timeline */
+        .year-timeline {
+            display: flex;
+            gap: 4px;
+            overflow-x: auto;
+            padding: 8px 0;
+        }
+        .year-item {
+            flex-shrink: 0;
+            text-align: center;
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            min-width: 72px;
+            transition: all 0.3s;
+        }
+        .year-item.current {
+            border-color: var(--gold);
+            background: rgba(201, 169, 110, 0.1);
+        }
+        .year-item .yr-num {
+            font-size: 1.3rem;
+            color: var(--gold);
+        }
+        .year-item .yr-name {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+        .year-item .yr-cal {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        /* Reaction section */
+        .reaction-item {
+            display: flex;
+            gap: 12px;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            font-size: 0.83rem;
+            color: var(--text-secondary);
+            line-height: 1.7;
+        }
+        .reaction-item:last-child { border-bottom: none; }
+        .reaction-num {
+            flex-shrink: 0;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background: var(--bg-secondary);
+            color: var(--gold);
+            font-size: 0.8rem;
+        }
+
+        /* Missing Numbers */
+        .missing-item {
+            padding: 10px 14px;
+            background: rgba(155, 110, 199, 0.05);
+            border-radius: 8px;
+            margin-bottom: 8px;
+            border-left: 2px solid rgba(155, 110, 199, 0.3);
+        }
+        .missing-item h5 {
+            font-size: 0.83rem;
+            color: var(--accent-purple);
+            margin-bottom: 4px;
+        }
+        .missing-item p {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            line-height: 1.7;
+        }
+
+        /* Collapsible */
+        .collapsible-header {
+            cursor: pointer;
+            user-select: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .collapsible-header .arrow {
+            transition: transform 0.3s;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+        }
+        .collapsible-header.open .arrow { transform: rotate(180deg); }
+        .collapsible-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease;
+        }
+        .collapsible-content.open { max-height: 5000px; }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 30px 0;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            letter-spacing: 0.1em;
+        }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            .container { padding: 12px; }
+            .header h1 { font-size: 1.5rem; letter-spacing: 0.15em; }
+            .input-section { padding: 20px; }
+            .date-inputs { flex-direction: column; }
+            .summary-grid { grid-template-columns: repeat(2, 1fr); }
+            .trait-list { grid-template-columns: 1fr; }
+            .section-card { padding: 20px; }
+            .nine-grid { grid-template-columns: repeat(3, 68px); grid-template-rows: repeat(3, 68px); }
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.5s ease forwards; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>生命数字密码</h1>
+            <div class="subtitle">基于苏醒《生命数字密码》 · 毕达哥拉斯占数学</div>
+            <div class="divider"></div>
+        </header>
+
+        <section class="input-section">
+            <label>请输入你的出生日期</label>
+            <div class="date-inputs">
+                <input type="number" id="year" placeholder="年" min="1900" max="2099">
+                <input type="number" id="month" placeholder="月" min="1" max="12">
+                <input type="number" id="day" placeholder="日" min="1" max="31">
+            </div>
+            <button class="btn-calculate" onclick="calculate()">解 读 生 命 蓝 图</button>
+        </section>
+
+        <div class="results" id="results"></div>
+
+        <footer class="footer">
+            <p>仅供个人参考 · 基于苏醒《生命数字密码》</p>
+        </footer>
+    </div>
+
+    <script type="module">
+        import { calculateAll, calcPersonalYearFor } from './calculator.js';
+        import { numberInfo } from './data-basic.js';
+        import { lifePathDescriptions } from './data-lifepath.js';
+        import { restrictionDescriptions } from './data-restriction.js';
+        import { personalYearDescriptions } from './data-personalyear.js';
+        import { lineDescriptions, missingDescriptions } from './data-grid.js';
+
+        window.calculate = function() {
+            const year = parseInt(document.getElementById('year').value);
+            const month = parseInt(document.getElementById('month').value);
+            const day = parseInt(document.getElementById('day').value);
+            if (!year || !month || !day || month < 1 || month > 12 || day < 1 || day > 31) {
+                alert('请输入有效的出生日期');
+                return;
+            }
+            const r = calculateAll(year, month, day);
+            renderResults(r, year, month, day);
+        };
+
+        function renderResults(r, year, month, day) {
+            const el = document.getElementById('results');
+            const lp = lifePathDescriptions[r.lifePath] || lifePathDescriptions[9];
+            const info = numberInfo[r.lifePath] || numberInfo[9];
+            const rest = restrictionDescriptions[r.restriction] || restrictionDescriptions[9];
+            const py = personalYearDescriptions[r.personalYear] || personalYearDescriptions[1];
+
+            // Summary
+            let html = '<div class="summary-grid fade-in">';
+            html += `<div class="summary-card"><div class="label">命数（命运数）</div><div class="value">${r.lifePath}</div><div class="sub">${lp.title}</div></div>`;
+            html += `<div class="summary-card"><div class="label">天赋数</div><div class="value">${r.talentDisplay}</div></div>`;
+            html += `<div class="summary-card"><div class="label">生日数</div><div class="value">${r.birthDay}</div><div class="sub">${numberInfo[r.birthDay]?.name || ''}</div></div>`;
+            html += `<div class="summary-card"><div class="label">限制数</div><div class="value">${r.restriction}</div><div class="sub">童年习气</div></div>`;
+            html += `<div class="summary-card"><div class="label">流年数</div><div class="value">${r.personalYear}</div><div class="sub">${new Date().getFullYear()} ${py.name}</div></div>`;
+            html += `<div class="summary-card"><div class="label">星座</div><div class="value small">${r.zodiac.zodiac}</div></div>`;
+            html += '</div>';
+
+            // Innate numbers
+            html += '<div class="section-card fade-in">';
+            html += '<div class="section-title"><span class="num-badge">三</span>先天数 — 三个人生阶段</div>';
+            html += '<div class="section-subtitle">出生月、出生日、出生年分别代表三个养成阶段</div>';
+            html += `<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">`;
+            [1,2,3].forEach((s, i) => {
+                const stages = [r.innate.stage1, r.innate.stage2, r.innate.stage3];
+                const ages = Object.values(r.stageAges);
+                const names = ['型塑启蒙期', '产出壮年期', '丰收晚年期'];
+                const sources = [`出生月（${month}月）→ ${stages[i]}`, `出生日（${day}日）→ ${stages[i]}`, `出生年（${year}年）→ ${stages[i]}`];
+                html += `<div style="text-align:center;padding:12px;background:var(--bg-secondary);border-radius:8px;">`;
+                html += `<div style="font-size:1.4rem;color:var(--gold);">${stages[i]}</div>`;
+                html += `<div style="font-size:0.78rem;color:var(--text-secondary);margin-top:4px;">${sources[i]}</div>`;
+                html += `<div style="font-size:0.72rem;color:var(--text-muted);margin-top:4px;">${ages[i]}</div>`;
+                html += '</div>';
+            });
+            html += '</div></div>';
+
+            // Dominant frequency
+            if (r.dominant.length > 0) {
+                html += '<div class="section-card fade-in">';
+                html += '<div class="section-title"><span class="num-badge">频</span>频率最多数</div>';
+                r.dominant.forEach(d => {
+                    const dInfo = numberInfo[d.digit];
+                    html += `<div style="margin:8px 0;padding:12px;background:var(--bg-secondary);border-radius:8px;">`;
+                    html += `<div style="color:var(--gold);">数字 ${d.digit}（${dInfo?.name || ''}）出现了 ${d.count} 次</div>`;
+                    html += `<div style="font-size:0.82rem;color:var(--text-secondary);margin-top:4px;">此数字能量过强，${dInfo?.positive.slice(0,3).join('、')}等特征会非常突出，同时${dInfo?.negative.slice(0,3).join('、')}等负面也会被放大。</div>`;
+                    html += '</div>';
+                });
+                html += '</div>';
+            }
+
+            // Life Path Detail
+            html += '<div class="section-card fade-in">';
+            html += `<div class="section-title"><span class="num-badge">${r.lifePath}</span>命数 ${r.lifePath} — ${lp.title}</div>`;
+            html += '<div class="section-subtitle">人生角色定位与发展使命</div>';
+            html += `<div class="lp-overview">${lp.overview}</div>`;
+
+            // Traits
+            html += '<div class="trait-list">';
+            html += '<div class="trait-group positive"><h4>正面优势</h4><div class="trait-tags">';
+            (info.positive || []).forEach(t => { html += `<span class="trait-tag pos">${t}</span>`; });
+            html += '</div></div>';
+            html += '<div class="trait-group negative"><h4>负面挑战</h4><div class="trait-tags">';
+            (info.negative || []).forEach(t => { html += `<span class="trait-tag neg">${t}</span>`; });
+            html += '</div></div></div>';
+
+            // Success factors
+            html += '<div class="detail-block"><h4>✦ 成功的根本</h4>';
+            (lp.success || []).forEach(s => {
+                html += `<div class="success-item"><div class="kw">▸ ${s.k}</div><div class="desc">${s.v}</div></div>`;
+            });
+            html += '</div>';
+
+            // Sins
+            html += '<div class="detail-block"><h4>⚠ 原·罪</h4>';
+            (lp.sin || []).forEach(s => {
+                html += `<div class="sin-item"><div class="kw">▸ ${s.k}</div><div class="desc">${s.v}</div></div>`;
+            });
+            html += '</div>';
+
+            // Essence, Energy, Interpersonal, Love (collapsible)
+            const details = [
+                {key: 'essence', title: '深层解读：本质'},
+                {key: 'energy', title: '深层解读：能量'},
+                {key: 'interpersonal', title: '深层解读：人际'},
+                {key: 'love', title: '深层解读：感情'}
+            ];
+            details.forEach((d, idx) => {
+                if (lp[d.key]) {
+                    const id = 'lp-' + d.key;
+                    html += `<div class="detail-block collapsible-header" onclick="toggleCollapsible('${id}')">`;
+                    html += `<h4>${d.title}</h4><span class="arrow">▼</span></div>`;
+                    html += `<div id="${id}" class="collapsible-content"><p style="padding:12px 0;font-size:0.88rem;color:var(--text-secondary);line-height:1.9;">${lp[d.key]}</p></div>`;
+                }
+            });
+
+            // Reactions
+            if (lp.reactions) {
+                html += '<div class="detail-block"><h4>⚡ 数字之间的"化学反应"</h4>';
+                html += '<p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:8px;">当你生日中其他数字能量过大时的表现：</p>';
+                for (const [num, desc] of Object.entries(lp.reactions)) {
+                    html += `<div class="reaction-item"><span class="reaction-num">${num}</span><span>${desc}</span></div>`;
+                }
+                html += '</div>';
+            }
+            html += '</div>';
+
+            // Nine Grid
+            html += '<div class="section-card fade-in">';
+            html += '<div class="section-title"><span class="num-badge">宫</span>生日九宫图</div>';
+            html += '<div class="section-subtitle">身（147）· 心（258）· 灵（369）</div>';
+            html += '<div class="grid-container"><div class="nine-grid">';
+            // Layout: top row 3,6,9  mid row 2,5,8  bottom row 1,4,7
+            const gridLayout = [[3,6,9],[2,5,8],[1,4,7]];
+            gridLayout.forEach(row => {
+                row.forEach(n => {
+                    const count = r.grid[n];
+                    const has = count > 0;
+                    const miss = count === 0;
+                    html += `<div class="grid-cell ${has ? 'has-num' : ''} ${miss ? 'missing' : ''}">`;
+                    html += `<span class="cell-num">${n}</span>`;
+                    if (has) {
+                        html += '<div class="cell-dots">';
+                        for (let i = 0; i < count; i++) html += '<span class="dot"></span>';
+                        html += '</div>';
+                    }
+                    html += '</div>';
+                });
+            });
+            html += '</div>';
+            html += '<div class="grid-labels"><span class="grid-label">灵</span><span class="grid-label">心</span><span class="grid-label">身</span></div>';
+            html += '</div>';
+
+            // Grid lines
+            html += '<div class="grid-lines-section"><h4 style="font-size:0.9rem;color:var(--gold-light);margin-bottom:10px;">连线分析</h4>';
+            r.lines.active.forEach(l => {
+                const ld = lineDescriptions[l.name];
+                if (ld) {
+                    html += `<div class="line-item"><span class="line-name">${l.name} ${ld.name}（${ld.posName}）</span><span class="line-status active">✓ 连通</span></div>`;
+                    html += `<div class="line-desc">${ld.positive}</div>`;
+                }
+            });
+            r.lines.inactive.filter(l => l.type === 'main').forEach(l => {
+                const ld = lineDescriptions[l.name];
+                if (ld) {
+                    html += `<div class="line-item"><span class="line-name">${l.name} ${ld.name}</span><span class="line-status inactive">✗ 断线</span></div>`;
+                    html += `<div class="line-desc">断线意味着在${ld.posName}方面有障碍和欠缺，是需要关注和努力的部分。</div>`;
+                }
+            });
+            html += '</div>';
+
+            // Missing numbers
+            if (r.missing.length > 0) {
+                html += '<h4 style="font-size:0.9rem;color:var(--gold-light);margin:16px 0 10px;">空缺数</h4>';
+                r.missing.forEach(m => {
+                    const md = missingDescriptions[m];
+                    if (md) {
+                        html += `<div class="missing-item"><h5>欠缺 ${m}：${md.title}</h5><p>${md.desc}</p></div>`;
+                    }
+                });
+            }
+            html += '</div>';
+
+            // Restriction Number
+            html += '<div class="section-card fade-in">';
+            html += `<div class="section-title"><span class="num-badge">${r.restriction}</span>限制数 ${r.restriction} — 童年习气</div>`;
+            html += '<div class="section-subtitle">限制数是出生月和日相加的总和，代表童年形成的制约模式</div>';
+            html += '<div class="restriction-card">';
+            html += `<h4>儿时受到的制约</h4><p>${rest.childhood}</p>`;
+            html += `<h4>成长后的表现</h4><p>${rest.adult}</p>`;
+            html += `<h4>解除"铃铛"法</h4><p class="cure-text">${rest.cure}</p>`;
+            html += '</div></div>';
+
+            // Personal Year
+            html += '<div class="section-card fade-in">';
+            html += `<div class="section-title"><span class="num-badge">${r.personalYear}</span>流年 ${r.personalYear} — ${py.name} ${py.icon}</div>`;
+            html += `<div class="section-subtitle">${new Date().getFullYear()}年流年 · 9年循环</div>`;
+            // Timeline
+            html += '<div class="year-timeline">';
+            r.personalYears.forEach(pyItem => {
+                const isCurrent = pyItem.year === new Date().getFullYear();
+                const pyDesc = personalYearDescriptions[pyItem.number];
+                html += `<div class="year-item ${isCurrent ? 'current' : ''}">`;
+                html += `<div class="yr-num">${pyItem.number}</div>`;
+                html += `<div class="yr-name">${pyDesc?.name || ''}</div>`;
+                html += `<div class="yr-cal">${pyItem.year}</div>`;
+                html += '</div>';
+            });
+            html += '</div>';
+            html += '<div class="personal-year-card" style="margin-top:16px;">';
+            html += `<h4>${py.icon} ${new Date().getFullYear()}年 · ${py.name}</h4>`;
+            html += `<p><strong>正面：</strong>${py.positive}</p>`;
+            html += `<p><strong>注意：</strong>${py.negative}</p>`;
+            html += `<p><strong>健康：</strong>${py.health}</p>`;
+            html += '</div></div>';
+
+            el.innerHTML = html;
+            el.classList.add('show');
+            el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        window.toggleCollapsible = function(id) {
+            const content = document.getElementById(id);
+            const header = content.previousElementSibling;
+            content.classList.toggle('open');
+            header.classList.toggle('open');
+        };
+
+        // Enter key support
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Enter') calculate();
+        });
+    </script>
+</body>
+</html>
