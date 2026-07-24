@@ -11,7 +11,7 @@ module.exports = {
       env: {
         NODE_ENV: 'production',
         PORT: 3300,
-        HOST: '0.0.0.0'
+        HOST: '127.0.0.1' // 只监听本机，由宝塔 nginx 反代过来，不直接暴露
       }
     }
   ]
