@@ -1,0 +1,13 @@
+{
+  "name": "shuzimima",
+  "version": "1.0.0",
+  "description": "生命数字密码 — 生命蓝图解析（基于苏醒《生命数字密码》）",
+  "private": true,
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2"
+  }
+}
