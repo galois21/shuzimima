@@ -1,21 +1,42 @@
 /**
  * 生命数字密码 · 前端渲染
- * 依赖: calculator.js + data-*.js
+ * 依赖: calculator.js + data/*.json（启动时 fetch）
  */
 import { calculateAll } from "./calculator.js";
-import { numberInfo } from "./data-basic.js";
-import { lifePathDescriptions } from "./data-lifepath.js";
-import { restrictionDescriptions } from "./data-restriction.js";
-import { personalYearDescriptions } from "./data-personalyear.js";
-import { lineDescriptions, missingDescriptions } from "./data-grid.js";
-import { birthdayDescriptions } from "./data-birthday.js";
-import { talentDescriptions } from "./data-talent.js";
 
+/* ----------------------------- 数据加载 ----------------------------- */
+const DATA_FILES = {
+  numbers: "./data/numbers.json",
+  lifePath: "./data/lifePath.json",
+  birthDay: "./data/birthDay.json",
+  talent: "./data/talent.json",
+  restriction: "./data/restriction.json",
+  personalYear: "./data/personalYear.json",
+  grid: "./data/grid.json",
+};
+
+const DATA = {};
+const DATA_READY = Promise.all(
+  Object.entries(DATA_FILES).map(async ([k, url]) => {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`加载 ${url} 失败 (${res.status})`);
+    DATA[k] = await res.json();
+  })
+).catch((err) => {
+  console.error("[数据加载失败]", err);
+  return Promise.reject(err);
+});
+
+/* ----------------------------- 取数辅助 ----------------------------- */
 const $ = (id) => document.getElementById(id);
-const numInfo = (n) => numberInfo[String(n)] || numberInfo["9"] || {};
-const lp = (n) => lifePathDescriptions[String(n)] || lifePathDescriptions["9"];
-const pyDesc = (n) => personalYearDescriptions[String(n)] || personalYearDescriptions["1"];
-const restDesc = (n) => restrictionDescriptions[String(n)] || restrictionDescriptions["9"];
+const numInfo = (n) => DATA.numbers?.[String(n)] || DATA.numbers?.["9"] || {};
+const lp = (n) => DATA.lifePath?.[String(n)] || DATA.lifePath?.["9"] || {};
+const pyDesc = (n) => DATA.personalYear?.[String(n)] || DATA.personalYear?.["1"] || {};
+const restDesc = (n) => DATA.restriction?.[String(n)] || DATA.restriction?.["9"] || {};
+const bdDesc = (day) => DATA.birthDay?.[String(day)] || null;
+const talentDesc = (talent) => DATA.talent?.[String(talent)] || null;
+const lineDesc = (name) => DATA.grid?.lines?.[name] || null;
+const missingDesc = (d) => DATA.grid?.missing?.[String(d)] || null;
 
 const esc = (s) =>
   String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
@@ -96,6 +117,10 @@ function points(arr, cls) {
     .join("");
 }
 
+function ul(arr) {
+  return arr && arr.length ? `<ul class="py-list">${arr.map((t) => `<li>${esc(t)}</li>`).join("")}</ul>` : "";
+}
+
 /* ----------------------------- 渲染：各区块 ----------------------------- */
 function renderSummary(r) {
   const curYear = new Date().getFullYear();
@@ -123,6 +148,7 @@ function renderShare(r) {
     `天赋 ${r.talentDisplay}`,
     info.element ? `五行 ${info.element}` : "",
     info.symbol ? `数字符 ${info.symbol}` : "",
+    info.crystal ? `水晶 ${info.crystal}` : "",
     r.zodiac.zodiac,
     info.type ? info.type : "",
   ].filter(Boolean);
@@ -155,18 +181,23 @@ function renderInnate(r, year, month, day) {
 }
 
 function renderBirthday(r, day) {
-  const desc = birthdayDescriptions[String(day)] || "";
-  if (!desc) return "";
-  const inner = `<div class="overview">${esc(desc)}</div>`;
+  const d = bdDesc(day);
+  if (!d) return "";
+  const inner = `
+    <div class="overview">${esc(d.reading)}</div>
+    ${d.traits && d.traits.length ? `<div class="trait-tags" style="margin-top:12px;">${tags(d.traits, "")}</div>` : ""}
+    ${d.advice ? `<div class="info-card" style="margin-top:12px;"><h4>成长建议</h4><p>${esc(d.advice)}</p></div>` : ""}`;
   return section(r.birthDay, `出生日 ${day}（生日数 ${r.birthDay}）`, "出生日代表天性人格与行为表现，是成年阶段最突出的个人标签", inner);
 }
 
 function renderTalent(r) {
-  const combo = talentDescriptions[String(r.talent)] || [];
-  if (!combo.length) return "";
-  const inner = `<div class="points">${combo
-    .map((c) => `<div class="point gold"><span class="k">${esc(c.combo)}</span><span class="v">${esc(c.desc)}</span></div>`)
-    .join("")}</div>`;
+  const t = talentDesc(r.talent);
+  if (!t) return "";
+  const inner = `<div class="points">
+    <div class="point gold"><span class="k">潜能</span><span class="v">${esc(t.potential)}</span></div>
+    <div class="point good"><span class="k">开发方向</span><span class="v">${esc(t.development)}</span></div>
+    <div class="point bad"><span class="k">注意</span><span class="v">${esc(t.caution)}</span></div>
+  </div>`;
   return section(r.talentDisplay, `天赋数 ${r.talentDisplay} · 潜能开发`, "出生年月日所有数字相加的中间数，代表你的天赋潜能方向", inner);
 }
 
@@ -187,10 +218,10 @@ function renderLifePath(r) {
   const d = lp(r.lifePath);
   const info = numInfo(r.lifePath);
   const collapse = [
-    { key: "essence", title: "深层解读 · 本质" },
-    { key: "energy", title: "深层解读 · 能量" },
-    { key: "interpersonal", title: "深层解读 · 人际" },
-    { key: "love", title: "深层解读 · 感情" },
+    { key: "mission", title: "人生使命" },
+    { key: "love", title: "感情模式" },
+    { key: "interpersonal", title: "人际互动" },
+    { key: "growth", title: "成长方向" },
   ]
     .filter((c) => d[c.key])
     .map(
@@ -207,14 +238,21 @@ function renderLifePath(r) {
       .join("")}</div>`;
   }
 
+  const essence = info.essence ? `<div class="overview" style="opacity:.82;margin-top:10px;">${esc(info.essence)}</div>` : "";
+  const career = d.career
+    ? `<div class="point gold" style="margin-top:14px;"><span class="k">职业方向</span><span class="v">${esc(d.career)}</span></div>`
+    : "";
+
   const inner = `
     <div class="overview">${esc(d.overview)}</div>
+    ${essence}
     <div class="traits">
-      <div class="trait-group good"><h4>正面优势</h4><div class="trait-tags">${tags(info.positive, "pos")}</div></div>
-      <div class="trait-group bad"><h4>负面挑战</h4><div class="trait-tags">${tags(info.negative, "neg")}</div></div>
+      <div class="trait-group good"><h4>核心优势</h4><div class="trait-tags">${tags(d.strengths, "pos")}</div></div>
+      <div class="trait-group bad"><h4>主要挑战</h4><div class="trait-tags">${tags(d.challenges, "neg")}</div></div>
     </div>
     <div class="points" style="margin-top:14px;">${points(d.success, "good")}</div>
-    <div class="points">${points(d.sin, "bad")}</div>
+    <div class="points">${points(d.pitfalls, "bad")}</div>
+    ${career}
     ${collapse}
     ${reactions}
   `;
@@ -237,7 +275,7 @@ function renderGrid(r) {
 
   const activeLines = (r.lines.active || [])
     .map((l) => {
-      const ld = lineDescriptions[l.name];
+      const ld = lineDesc(l.name);
       if (!ld) return "";
       return `<div class="line"><div class="row"><span class="name">${l.name} <b>${esc(ld.name)}</b>（${esc(ld.posName)}）</span><span class="badge on">✓ 连通</span></div><div class="line-desc">${esc(ld.positive)}</div></div>`;
     })
@@ -246,7 +284,7 @@ function renderGrid(r) {
   const brokenLines = (r.lines.inactive || [])
     .filter((l) => l.type === "main")
     .map((l) => {
-      const ld = lineDescriptions[l.name];
+      const ld = lineDesc(l.name);
       if (!ld) return "";
       return `<div class="line"><div class="row"><span class="name">${l.name} <b>${esc(ld.name)}</b></span><span class="badge off">✗ 断线</span></div><div class="line-desc">断线意味着 ${esc(ld.posName)} 方面有障碍与欠缺，是需关注与努力的部分。</div></div>`;
     })
@@ -254,8 +292,10 @@ function renderGrid(r) {
 
   const missing = (r.missing || [])
     .map((m) => {
-      const md = missingDescriptions[m];
-      return md ? `<div class="missing"><h5>欠缺 ${m} · ${esc(md.title)}</h5><p>${esc(md.desc)}</p></div>` : "";
+      const md = missingDesc(m);
+      return md
+        ? `<div class="missing"><h5>欠缺 ${m} · ${esc(md.title)}</h5><p>${esc(md.desc)}</p>${md.remedy ? `<p class="cure">补足：${esc(md.remedy)}</p>` : ""}</div>`
+        : "";
     })
     .join("");
 
@@ -276,6 +316,15 @@ function renderRestriction(r) {
   return section(r.restriction, `限制数 ${r.restriction} · 童年习气`, "出生月与日相加的总和，代表童年形成的制约模式", inner);
 }
 
+function pyDetailHtml(d, num, year) {
+  return `<h4>${d.icon || ""} 流年 ${num} · ${esc(d.name)}（${year}）</h4>
+    ${d.theme ? `<p><strong>主题：</strong>${esc(d.theme)}</p>` : ""}
+    ${d.opportunities ? `<p><strong>机遇</strong></p>${ul(d.opportunities)}` : ""}
+    ${d.cautions ? `<p><strong>注意</strong></p>${ul(d.cautions)}` : ""}
+    ${d.health ? `<p><strong>健康：</strong>${esc(d.health)}</p>` : ""}
+    ${d.focus ? `<p><strong>焦点：</strong>${esc(d.focus)}</p>` : ""}`;
+}
+
 function renderPersonalYear(r) {
   const curYear = new Date().getFullYear();
   const timeline = (r.personalYears || [])
@@ -288,12 +337,7 @@ function renderPersonalYear(r) {
     .join("");
 
   const cur = pyDesc(r.personalYear);
-  const detail = `<div class="year-detail show" id="pyDetail">
-    <h4>${cur.icon || ""} 流年 ${r.personalYear} · ${esc(cur.name)}（${curYear}）</h4>
-    <p><strong>正面：</strong>${esc(cur.positive)}</p>
-    <p><strong>注意：</strong>${esc(cur.negative)}</p>
-    <p><strong>健康：</strong>${esc(cur.health)}</p>
-  </div>`;
+  const detail = `<div class="year-detail show" id="pyDetail">${pyDetailHtml(cur, r.personalYear, curYear)}</div>`;
 
   const inner = `<div class="timeline">${timeline}</div>${detail}`;
   return section(r.personalYear, `流年 ${r.personalYear} · ${esc(cur.name)} ${cur.icon || ""}`, `${curYear} 年流年 · 点击下方年份查看 9 年循环`, inner);
@@ -326,16 +370,12 @@ function selectYear(num, yearEl) {
   if (!d || !detail) return;
   document.querySelectorAll(".year.cur").forEach((e) => e.classList.remove("cur"));
   yearEl.classList.add("cur");
-  const year = yearEl.dataset.year;
-  detail.innerHTML = `<h4>${d.icon || ""} 流年 ${num} · ${esc(d.name)}（${year}）</h4>
-    <p><strong>正面：</strong>${esc(d.positive)}</p>
-    <p><strong>注意：</strong>${esc(d.negative)}</p>
-    <p><strong>健康：</strong>${esc(d.health)}</p>`;
+  detail.innerHTML = pyDetailHtml(d, num, yearEl.dataset.year);
   detail.classList.add("show");
 }
 
 /* ----------------------------- 事件 ----------------------------- */
-function onSubmit() {
+async function onSubmit() {
   const year = parseInt($("year").value, 10);
   const month = parseInt($("month").value, 10);
   const day = parseInt($("day").value, 10);
@@ -345,8 +385,9 @@ function onSubmit() {
   }
   $("generateView").classList.remove("hidden");
   requestAnimationFrame(() => {
-    runGenerate(() => {
+    runGenerate(async () => {
       try {
+        await DATA_READY;
         const r = calculateAll(year, month, day);
         render(r, year, month, day);
       } catch (err) {

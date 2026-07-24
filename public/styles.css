@@ -854,6 +854,32 @@ a {
   font-weight: 500;
 }
 
+.year-detail .py-list {
+  list-style: none;
+  margin: 0 0 10px;
+  padding: 0;
+}
+
+.year-detail .py-list li {
+  position: relative;
+  margin: 0 0 6px;
+  padding-left: 16px;
+  color: var(--ink-soft);
+  font-size: 0.82rem;
+  line-height: 1.8;
+}
+
+.year-detail .py-list li::before {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 0.7em;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--gold-deep);
+}
+
 /* ============================== 页脚 ============================== */
 .footer {
   text-align: center;
