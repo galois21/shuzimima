@@ -256,7 +256,7 @@ export function getZodiacNumber(month, day) {
 
   // 按书中对应关系
   const zodiacNum = {
-    '白羊座': 1, '魔羯座': 1, '金牛座': 2, '双子座': 3, '双鱼座': 3,
+    '白羊座': 1, '摩羯座': 1, '金牛座': 2, '双子座': 3, '双鱼座': 3,
     '巨蟹座': 4, '狮子座': 5, '处女座': 6, '天秤座': 7, '天蝎座': 8, '射手座': 9,
     '水瓶座': 11
   };
@@ -271,7 +271,7 @@ export function getZodiacNumber(month, day) {
   else if ((month === 9 && day >= 23) || (month === 10 && day <= 23)) zodiacName = '天秤座';
   else if ((month === 10 && day >= 24) || (month === 11 && day <= 22)) zodiacName = '天蝎座';
   else if ((month === 11 && day >= 23) || (month === 12 && day <= 21)) zodiacName = '射手座';
-  else if ((month === 12 && day >= 22) || (month === 1 && day <= 19)) zodiacName = '魔羯座';
+  else if ((month === 12 && day >= 22) || (month === 1 && day <= 19)) zodiacName = '摩羯座';
   else if ((month === 1 && day >= 20) || (month === 2 && day <= 18)) zodiacName = '水瓶座';
   else if ((month === 2 && day >= 19) || (month === 3 && day <= 20)) zodiacName = '双鱼座';
 

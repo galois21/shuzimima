@@ -854,13 +854,13 @@ a {
   font-weight: 500;
 }
 
-.year-detail .py-list {
+.py-list {
   list-style: none;
   margin: 0 0 10px;
   padding: 0;
 }
 
-.year-detail .py-list li {
+.py-list li {
   position: relative;
   margin: 0 0 6px;
   padding-left: 16px;
@@ -869,7 +869,7 @@ a {
   line-height: 1.8;
 }
 
-.year-detail .py-list li::before {
+.py-list li::before {
   content: "";
   position: absolute;
   left: 2px;
@@ -878,6 +878,68 @@ a {
   height: 5px;
   border-radius: 50%;
   background: var(--gold-deep);
+}
+
+/* 9 年循环阶段网格 */
+.cycle-list {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.cycle-stage {
+  position: relative;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--panel-2);
+}
+
+.cycle-stage.cur {
+  border-color: var(--gold);
+  background: rgba(201, 169, 110, 0.08);
+  box-shadow: inset 0 0 0 1px var(--line-gold);
+}
+
+.cs-year {
+  font-family: var(--serif);
+  font-size: 1.15rem;
+  color: var(--gold);
+  line-height: 1;
+}
+
+.cycle-stage.cur .cs-year {
+  color: var(--gold-soft);
+}
+
+.cs-body {
+  margin-top: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cs-body b {
+  color: var(--ink);
+  font-weight: 500;
+  font-size: 0.82rem;
+}
+
+.cs-body span {
+  color: var(--ink-soft);
+  font-size: 0.72rem;
+  line-height: 1.6;
+}
+
+.cs-mark {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  font-size: 0.62rem;
+  color: var(--bg);
+  background: var(--gold);
+  padding: 1px 7px;
+  border-radius: 6px;
 }
 
 /* ============================== 页脚 ============================== */
@@ -1123,5 +1185,8 @@ a {
   }
   .section-sub {
     margin-left: 0;
+  }
+  .cycle-list {
+    grid-template-columns: repeat(2, 1fr);
   }
 }

@@ -13,6 +13,11 @@ const DATA_FILES = {
   restriction: "./data/restriction.json",
   personalYear: "./data/personalYear.json",
   grid: "./data/grid.json",
+  zodiac: "./data/zodiac.json",
+  colorCrystal: "./data/colorCrystal.json",
+  compatibility: "./data/compatibility.json",
+  health: "./data/health.json",
+  cycles: "./data/cycles.json",
 };
 
 const DATA = {};
@@ -37,6 +42,11 @@ const bdDesc = (day) => DATA.birthDay?.[String(day)] || null;
 const talentDesc = (talent) => DATA.talent?.[String(talent)] || null;
 const lineDesc = (name) => DATA.grid?.lines?.[name] || null;
 const missingDesc = (d) => DATA.grid?.missing?.[String(d)] || null;
+const zodiacByName = (name) => Object.values(DATA.zodiac || {}).find((v) => v && v.name === name) || null;
+const colorByNum = (n) => DATA.colorCrystal?.byNumber?.[String(n)] || null;
+const compatByLp = (n) => DATA.compatibility?.byLifePath?.[String(n)] || null;
+const healthByNum = (n) => DATA.health?.byNumber?.[String(n)] || null;
+const pyHealth = (n) => DATA.health?.personalYearHealth?.[String(n)] || null;
 
 const esc = (s) =>
   String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
@@ -343,19 +353,110 @@ function renderPersonalYear(r) {
   return section(r.personalYear, `流年 ${r.personalYear} · ${esc(cur.name)} ${cur.icon || ""}`, `${curYear} 年流年 · 点击下方年份查看 9 年循环`, inner);
 }
 
+/* ----------------------------- 渲染：扩展区块 ----------------------------- */
+function renderZodiac(r) {
+  const z = zodiacByName(r.zodiac.zodiac);
+  if (!z) return "";
+  const inner = `
+    <div class="overview">${esc(z.note)}</div>
+    <div class="summary-grid" style="grid-template-columns:repeat(3,1fr);margin-top:12px;">
+      <div class="summary-card"><div class="label">对应数字</div><div class="value">${esc(z.rulingNumber)}</div></div>
+      <div class="summary-card"><div class="label">五行</div><div class="value small">${esc(z.element)}</div></div>
+      <div class="summary-card"><div class="label">主星</div><div class="value small">${esc(z.planet)}</div></div>
+    </div>
+    <div class="trait-tags" style="margin-top:12px;">${tags(z.keywords, "pos")}</div>
+    ${z.traits && z.traits.length ? `<p class="section-sub" style="margin:12px 0 4px;">星座特质</p>${ul(z.traits)}` : ""}`;
+  return section("星", `${z.name}（${z.dates}）`, "星座对应的数字能量与性格特质", inner);
+}
+
+function renderHealth(r) {
+  const h = healthByNum(r.lifePath);
+  if (!h) return "";
+  const pyh = pyHealth(r.personalYear);
+  const inner = `
+    ${h.vulnerable && h.vulnerable.length ? `<div class="trait-tags">${tags(h.vulnerable, "neg")}</div>` : ""}
+    <div class="points" style="margin-top:10px;">
+      <div class="point bad"><span class="k">倾向</span><span class="v">${esc(h.tendency)}</span></div>
+      <div class="point good"><span class="k">调养</span><span class="v">${esc(h.advice)}</span></div>
+      ${pyh ? `<div class="point gold"><span class="k">本年流年健康</span><span class="v">${esc(pyh)}</span></div>` : ""}
+    </div>`;
+  return section("健", `健康 · 命数 ${r.lifePath} 的身心软肋`, "数字能量投射到特定身体系统，了解软肋有的放矢地调养", inner);
+}
+
+function renderCompatibility(r) {
+  const c = compatByLp(r.lifePath);
+  if (!c) return "";
+  const principles = DATA.compatibility?.principles || [];
+  const collapse = principles.length
+    ? `<div class="collapse-head"><h4>婚配通则</h4><span class="arrow">▼</span></div>
+       <div class="collapse-body"><div class="inner">${ul(principles)}</div></div>`
+    : "";
+  const inner = `
+    <div class="overview">${esc(c.note)}</div>
+    <div class="traits" style="margin-top:10px;">
+      <div class="trait-group good"><h4>最佳配对</h4><div class="trait-tags">${tags(c.bestMatch, "pos")}</div></div>
+      <div class="trait-group bad"><h4>需磨合</h4><div class="trait-tags">${tags(c.challenging, "neg")}</div></div>
+    </div>
+    ${collapse}`;
+  return section("配", `数字婚配 · 命数 ${r.lifePath}`, "以性格互补与同频为本的契合参考（非宿命结论）", inner);
+}
+
+function renderColorCrystal(r) {
+  const cc = colorByNum(r.lifePath);
+  if (!cc) return "";
+  const inner = `
+    <div class="points">
+      <div class="point gold"><span class="k">幸运色</span><span class="v">${esc(cc.color)}</span></div>
+      <div class="point gold"><span class="k">水晶</span><span class="v">${esc(cc.crystal)}</span></div>
+      <div class="point gold"><span class="k">方位</span><span class="v">${esc(cc.direction)}（${esc(cc.element)}）</span></div>
+    </div>
+    <div class="info-card" style="margin-top:10px;"><p>${esc(cc.usage)}</p></div>`;
+  return section("色", `色彩 · 水晶 · 方位`, "通过穿着佩饰与方位布置补足个人数字能量", inner);
+}
+
+function renderCycles(r) {
+  const cyc = DATA.cycles;
+  if (!cyc) return "";
+  const stages = (cyc.nineYearCycle?.stages || [])
+    .map((s) => {
+      const cur = String(r.personalYear) === String(s.year);
+      return `<div class="cycle-stage ${cur ? "cur" : ""}">
+        <div class="cs-year">${esc(s.year)}</div>
+        <div class="cs-body"><b>${esc(s.phase)}</b><span>${esc(s.essence)}</span></div>
+        ${cur ? `<div class="cs-mark">今年</div>` : ""}
+      </div>`;
+    })
+    .join("");
+  const chapters = cyc.lifeChapters?.reading || [];
+  const milestones = (cyc.ageMilestones?.milestones || []).map((m) => `${m.age}：${m.theme}`);
+  const inner = `
+    <div class="overview">${esc(cyc.intro)}</div>
+    <p class="section-sub" style="margin:12px 0 6px;">9 年循环节奏（高亮你今年所处阶段）</p>
+    <div class="cycle-list">${stages}</div>
+    ${chapters.length ? `<div class="info-card" style="margin-top:12px;"><h4>人生章节</h4>${ul(chapters)}</div>` : ""}
+    ${milestones.length ? `<div class="collapse-head"><h4>年龄节点</h4><span class="arrow">▼</span></div>
+      <div class="collapse-body"><div class="inner">${ul(milestones)}</div></div>` : ""}`;
+  return section("周", `人生周期 · 9 年循环`, "把流年放进更长的人生坐标，看清自己所处阶段", inner);
+}
+
 /* ----------------------------- 主渲染 ----------------------------- */
 function render(r, year, month, day) {
   const html = [
     renderSummary(r),
     renderShare(r),
+    renderZodiac(r),
     renderInnate(r, year, month, day),
     renderBirthday(r, day),
     renderTalent(r),
     renderFrequency(r),
     renderLifePath(r),
+    renderHealth(r),
+    renderCompatibility(r),
     renderGrid(r),
     renderRestriction(r),
     renderPersonalYear(r),
+    renderCycles(r),
+    renderColorCrystal(r),
   ].filter(Boolean).join("");
 
   const el = $("results");
